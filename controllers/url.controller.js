@@ -14,16 +14,30 @@ exports.createShortUrlAction = (req, res) => {
         .json({ status: false, message: "Invalid input", data: {} });
     }
     const urlCode = nanoid(6);
-    const newUrl = new urlModel({ longUrl, urlCode });
+    const shortUrl = `${process.env.BASE_URL}/${urlCode}`;
+    const newUrl = new urlModel({ longUrl, urlCode, shortUrl });
     newUrl.save();
-    const shortUrl = `${process.env.BASE_URL}/api/url/short/${newUrl.urlCode}`;
     return res.status(201).json({
       status: true,
       message: "Short URL created successfully",
-      data: { shortUrl },
+      data: {},
     });
   } catch (error) {
-    console.log("🚀 ~ error:", error);
+    return res
+      .status(500)
+      .json({ status: false, message: error.message, data: {} });
+  }
+};
+
+exports.getAllShortAction = async (req, res) => {
+  try {
+    const urls = await urlModel.find({}).sort({ createdAt: -1 });
+    return res.status(200).json({
+      status: true,
+      message: "All short URLs found",
+      data: urls,
+    });
+  } catch (error) {
     return res
       .status(500)
       .json({ status: false, message: error.message, data: {} });
@@ -41,13 +55,8 @@ exports.getShortUrlAction = async (req, res) => {
         data: {},
       });
     }
-    return res.status(200).json({
-      status: true,
-      message: "Short URL found",
-      data: { longUrl: url.longUrl },
-    });
+    return res.redirect(url.longUrl);
   } catch (error) {
-    console.log("��� ~ error:", error);
     return res
       .status(500)
       .json({ status: false, message: error.message, data: {} });
